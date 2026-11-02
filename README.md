@@ -2,9 +2,20 @@
 
 Aplicativo de agendamento da **Barbearia Ferreira**, feito em um único arquivo `index.html` com HTML, CSS e JavaScript puros.
 
+## Serviços
+
+| Serviço | Duração | Preço de referência |
+| --- | --- | ---: |
+| Corte masculino | 1h | R$ 50 |
+| Corte e barba | 2h | R$ 80 |
+| Barba | 30 min | R$ 35 |
+| Acabamento | 30 min | R$ 20 |
+
+Os preços são referências e podem variar conforme a cidade e o estabelecimento. Foram escolhidos com base na [pesquisa do Procon-PE de 2025](https://www.procon.pe.gov.br/images/2025/pesquisa/PESQUISA-DE-PRECOS-SUGESTOES-DE-PRESENTES-_DIA-DOS-PAIS-2025.pdf) e na [tabela da Cruz Barbearia](https://cruzbarbearia.com/precos/). As durações existentes foram mantidas.
+
 ## Como usar
 
-Abra `index.html` em um navegador. Escolha o serviço, o dia e um horário disponível. Preencha nome do tutor, nome do pet e telefone, e confirme. A confirmação mostra serviço, dia, início, fim e preço.
+Abra `index.html` em um navegador. Escolha o serviço, o dia e um horário disponível. Preencha os três campos do formulário e confirme. A confirmação mostra serviço, dia, início, fim e preço.
 
 ## Regras de horários
 
@@ -17,5 +28,3 @@ Abra `index.html` em um navegador. Escolha o serviço, o dia e um horário dispo
 ## Limitação
 
 Os agendamentos ficam apenas na memória da página. Ao recarregar ou fechar a página, eles desaparecem. Não há sincronização entre visitantes, banco de dados ou envio para o estabelecimento.
-
-A lista de serviços ainda contém os serviços originais do pet shop e pode ser atualizada para os serviços da barbearia.
