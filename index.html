@@ -410,10 +410,9 @@
       elements.forEach(element => {
         element.getAnimations?.().forEach(animation => animation.cancel());
         element.animate?.([
-          { opacity: .35, transform: `perspective(900px) rotateY(${direction * 72}deg)`, transformOrigin: origin },
-          { opacity: 1, transform: `perspective(900px) rotateY(${-direction * 5}deg)`, transformOrigin: origin, offset: .78 },
-          { opacity: 1, transform: 'perspective(900px) rotateY(0deg)', transformOrigin: origin }
-        ], { duration: 680, easing: 'cubic-bezier(.22,.68,.2,1)' });
+          { opacity: .88, transform: `perspective(1400px) rotateY(${direction * 14}deg)`, transformOrigin: origin },
+          { opacity: 1, transform: 'perspective(1400px) rotateY(0deg)', transformOrigin: origin }
+        ], { duration: 440, easing: 'ease-out' });
       });
     }
     $('view-bookings').addEventListener('click', () => {
@@ -430,7 +429,7 @@
       $('bookings-view').hidden = true;
       $('view-bookings').hidden = false;
       renderSlots();
-      animateArrival(1, $('schedule-intro'), $('schedule-view'));
+      animateArrival(1, $('schedule-view'));
     });
     seedExamples();
     renderServices();
