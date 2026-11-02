@@ -84,7 +84,7 @@
     .booking-item .booking-price{color:var(--pine);font-weight:800}
     .cancel-button{border:1px solid #eab7af;border-radius:11px;background:#fff5f3;color:#a33429;padding:9px 13px;min-height:44px;font-weight:800;flex:none}
     .cancel-button:hover{background:#ffe7e2}
-    .button-ripple{position:fixed;z-index:100;overflow:hidden;pointer-events:none}
+    .button-ripple{position:absolute;z-index:100;overflow:hidden;pointer-events:none}
     .button-ripple span{position:absolute;left:50%;top:50%;width:var(--ripple-size);height:var(--ripple-size);border:2px solid #087c78aa;border-radius:50%;background:#a7e8d844;transform:translate(-50%,-50%) scale(.05);animation:button-water-wave .65s ease-out forwards}
     .button-ripple span+span{animation-delay:.09s}
     @keyframes button-water-wave{to{opacity:0;transform:translate(-50%,-50%) scale(1.7)}}
@@ -190,8 +190,8 @@
       const rect = button.getBoundingClientRect();
       const ripple = document.createElement('span');
       ripple.className = 'button-ripple';
-      ripple.style.left = `${rect.left}px`;
-      ripple.style.top = `${rect.top}px`;
+      ripple.style.left = `${rect.left + window.scrollX}px`;
+      ripple.style.top = `${rect.top + window.scrollY}px`;
       ripple.style.width = `${rect.width}px`;
       ripple.style.height = `${rect.height}px`;
       ripple.style.borderRadius = getComputedStyle(button).borderRadius;
