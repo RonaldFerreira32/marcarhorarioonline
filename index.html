@@ -46,7 +46,18 @@
     .hint{font-size:.86rem;color:var(--muted);margin:16px 0 0}
     .slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
     .slot{border:1.5px solid var(--line);border-radius:10px;background:white;padding:10px 3px;color:var(--ink);font-weight:700}
+    .slot:disabled{cursor:not-allowed;background:#f1eee6;color:#8a877f;border-color:#e5dfd2}
     .empty-message{color:var(--muted);margin:0;font-size:.94rem}
+    [hidden]{display:none!important}
+    .fields{display:grid;gap:14px}
+    .field{display:grid;gap:6px;font-weight:700;font-size:.92rem}
+    .field input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px;background:white;color:var(--ink);font:inherit}
+    .field input:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+    .confirm-button{width:100%;margin-top:20px;border:0;border-radius:11px;background:var(--pine);color:white;padding:13px 18px;font-weight:800}
+    .confirm-button:hover{background:#5d4310}
+    .confirmation{border:1px solid var(--mint);border-radius:14px;background:var(--pine-soft);padding:20px;margin-top:20px}
+    .confirmation h2{margin-bottom:8px}
+    .confirmation p{margin:0}
     .summary{position:sticky;top:24px;background:var(--pine);border-color:var(--pine);color:white}
     .summary h2{color:white;margin-bottom:24px}
     .summary-row{padding:14px 0;border-top:1px solid #ffffff38}
@@ -93,23 +104,38 @@
             <div class="slots" id="slots" role="group" aria-label="Horários disponíveis"></div>
             <p class="empty-message" id="slots-message">Selecione um dia para ver os horários.</p>
           </section>
+          <section class="panel" id="booking-panel" aria-labelledby="booking-title" hidden>
+            <div class="section-heading"><span class="step">4</span><h2 id="booking-title">Seus dados</h2></div>
+            <form id="booking-form">
+              <div class="fields">
+                <label class="field">Nome do tutor<input id="tutor-name" name="tutor" type="text" autocomplete="name" required maxlength="100"></label>
+                <label class="field">Nome do pet<input id="pet-name" name="pet" type="text" required maxlength="100"></label>
+                <label class="field">Telefone<input id="phone" name="phone" type="tel" autocomplete="tel" required maxlength="30"></label>
+              </div>
+              <button class="confirm-button" type="submit">Confirmar agendamento</button>
+            </form>
+          </section>
+          <div class="confirmation" id="confirmation" role="status" aria-live="polite" hidden>
+            <h2>Agendamento confirmado</h2>
+            <p id="confirmation-details"></p>
+          </div>
         </div>
         <aside class="summary" aria-label="Resumo do agendamento">
           <h2>Seu agendamento</h2>
           <div class="summary-row"><span class="summary-label">Serviço</span><span class="summary-value placeholder" id="summary-service">Escolha um serviço</span></div>
           <div class="summary-row"><span class="summary-label">Dia</span><span class="summary-value placeholder" id="summary-day">Escolha um dia</span></div>
           <div class="summary-row"><span class="summary-label">Horário</span><span class="summary-value placeholder" id="summary-time">Escolha um horário</span></div>
-          <p class="summary-note">Esta é uma seleção de horário. Nenhuma reserva é enviada ou salva.</p>
+          <p class="summary-note">Agendamentos ficam disponíveis apenas enquanto esta página estiver aberta.</p>
         </aside>
       </div>
     </main>
   </div>
   <script>
     const services = [
-      { name: 'Banho', duration: '1h', price: 60 },
-      { name: 'Banho e tosa', duration: '2h', price: 110 },
-      { name: 'Hidratação', duration: '30 min', price: 40 },
-      { name: 'Tosa higiênica', duration: '30 min', price: 45 }
+      { name: 'Banho', duration: '1h', minutes: 60, price: 60 },
+      { name: 'Banho e tosa', duration: '2h', minutes: 120, price: 110 },
+      { name: 'Hidratação', duration: '30 min', minutes: 30, price: 40 },
+      { name: 'Tosa higiênica', duration: '30 min', minutes: 30, price: 45 }
     ];
     const today = new Date();
     let viewYear = today.getFullYear();
@@ -117,10 +143,36 @@
     let selectedService = null;
     let selectedDay = null;
     let selectedTime = null;
+    const bookings = [];
     const $ = id => document.getElementById(id);
     const currency = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
     const localDateLabel = date => new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+    const localDateKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const timeLabel = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    const timeMinutes = label => Number(label.slice(0, 2)) * 60 + Number(label.slice(3, 5));
+
+    function isBlockOccupied(date, start) {
+      return bookings.some(booking => booking.dateKey === localDateKey(date) && start < booking.end && start + 30 > booking.start);
+    }
+
+    function canBook(date, start, duration) {
+      if (!date || !Number.isInteger(start) || !Number.isInteger(duration) || duration <= 0 || start % 30 !== 0) return false;
+      const now = new Date();
+      const chosenDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const end = start + duration;
+      if (chosenDate < currentDate || date.getDay() === 0 || start < 9 * 60 || end > 18 * 60) return false;
+      if (chosenDate.getTime() === currentDate.getTime() && start <= now.getHours() * 60 + now.getMinutes()) return false;
+      if (start < 13 * 60 && end > 12 * 60) return false;
+      return !bookings.some(booking => booking.dateKey === localDateKey(date) && start < booking.end && end > booking.start);
+    }
+
+    function updateBookingPanel() {
+      $('booking-panel').hidden = selectedService === null || !selectedDay || !selectedTime;
+    }
+
+    function clearConfirmation() { $('confirmation').hidden = true; }
 
     function renderServices() {
       $('services').replaceChildren(...services.map((service, index) => {
@@ -129,7 +181,11 @@
         button.className = 'service' + (selectedService === index ? ' selected' : '');
         button.setAttribute('aria-pressed', selectedService === index);
         button.innerHTML = `<span class="service-name">${service.name}</span><span class="service-meta"><span>${service.duration}</span><strong>${currency(service.price)}</strong></span>`;
-        button.addEventListener('click', () => { selectedService = index; renderServices(); renderSummary(); });
+        button.addEventListener('click', () => {
+          selectedService = index;
+          if (selectedTime && !canBook(selectedDay, timeMinutes(selectedTime), service.minutes)) selectedTime = null;
+          clearConfirmation(); renderServices(); renderSlots(); renderSummary(); updateBookingPanel();
+        });
         return button;
       }));
     }
@@ -156,7 +212,7 @@
         button.setAttribute('aria-label', localDateLabel(date));
         button.setAttribute('aria-pressed', sameDay(date, selectedDay) ? 'true' : 'false');
         button.disabled = beforeToday || date.getDay() === 0;
-        button.addEventListener('click', () => { selectedDay = date; selectedTime = null; renderCalendar(); renderSlots(); renderSummary(); });
+        button.addEventListener('click', () => { selectedDay = date; selectedTime = null; clearConfirmation(); renderCalendar(); renderSlots(); renderSummary(); updateBookingPanel(); });
         items.push(button);
       }
       $('days').replaceChildren(...items);
@@ -180,16 +236,43 @@
       if (!times.length) { message.textContent = 'Não há mais horários disponíveis neste dia. Escolha outra data.'; message.hidden = false; return; }
       message.hidden = true;
       container.replaceChildren(...times.map(({ hour, minute }) => {
-        const label = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        const start = hour * 60 + minute;
+        const label = timeLabel(start);
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'slot' + (selectedTime === label ? ' selected' : '');
         button.textContent = label;
         button.setAttribute('aria-pressed', selectedTime === label ? 'true' : 'false');
-        button.addEventListener('click', () => { selectedTime = label; renderSlots(); renderSummary(); });
+        const occupied = isBlockOccupied(selectedDay, start);
+        button.disabled = occupied || (selectedService !== null && !canBook(selectedDay, start, services[selectedService].minutes));
+        if (button.disabled) button.setAttribute('aria-label', `${label}, ${occupied ? 'ocupado' : 'indisponível para este serviço'}`);
+        button.addEventListener('click', () => { selectedTime = label; clearConfirmation(); renderSlots(); renderSummary(); updateBookingPanel(); });
         return button;
       }));
     }
+
+    $('booking-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const tutor = $('tutor-name').value.trim();
+      const pet = $('pet-name').value.trim();
+      const phone = $('phone').value.trim();
+      if (!tutor || !pet || !phone) { $('booking-form').reportValidity(); return; }
+      if (selectedService === null || !selectedDay || !selectedTime) return;
+      const service = services[selectedService];
+      const start = timeMinutes(selectedTime);
+      if (!canBook(selectedDay, start, service.minutes)) {
+        selectedTime = null;
+        renderSlots(); renderSummary(); updateBookingPanel();
+        return;
+      }
+      const date = selectedDay;
+      bookings.push({ dateKey: localDateKey(date), start, end: start + service.minutes, service: service.name, price: service.price, tutor, pet, phone });
+      $('confirmation-details').textContent = `${service.name} para ${pet} · ${localDateLabel(date)} · ${timeLabel(start)} às ${timeLabel(start + service.minutes)} · ${currency(service.price)}.`;
+      $('confirmation').hidden = false;
+      $('booking-form').reset();
+      selectedTime = null;
+      renderSlots(); renderSummary(); updateBookingPanel();
+    });
 
     function renderSummary() {
       const values = [
