@@ -87,7 +87,8 @@
     button:not(:disabled){transition:transform .42s ease-out,box-shadow .42s ease-out,filter .25s ease}
     @media(hover:hover) and (pointer:fine){button:not(:disabled):hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 22px #087c7833;filter:brightness(1.04)}}
     button:not(:disabled):active{transition-duration:.22s;transform:translateY(4px) scale(.98);box-shadow:inset 0 4px 10px #064e4b38,0 1px 2px #064e4b24}
-    .button-ripple{position:absolute;z-index:100;overflow:hidden;pointer-events:none}
+    #schedule-view button:not(:disabled){position:relative;overflow:hidden}
+    .button-ripple{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
     .button-ripple span{position:absolute;left:50%;top:50%;width:var(--ripple-size);height:var(--ripple-size);border:2px solid #087c78aa;border-radius:50%;background:#a7e8d844;transform:translate(-50%,-50%) scale(.05);animation:button-water-wave .65s ease-out forwards}
     .button-ripple span+span{animation-delay:.09s}
     @keyframes button-water-wave{to{opacity:0;transform:translate(-50%,-50%) scale(1.7)}}
@@ -190,18 +191,23 @@
     $('schedule-view').addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button || button.disabled || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-      const rect = button.getBoundingClientRect();
-      const ripple = document.createElement('span');
-      ripple.className = 'button-ripple';
-      ripple.style.left = `${rect.left + window.scrollX}px`;
-      ripple.style.top = `${rect.top + window.scrollY}px`;
-      ripple.style.width = `${rect.width}px`;
-      ripple.style.height = `${rect.height}px`;
-      ripple.style.borderRadius = getComputedStyle(button).borderRadius;
-      ripple.style.setProperty('--ripple-size', `${Math.max(rect.width, rect.height)}px`);
-      ripple.innerHTML = '<span></span><span></span>';
-      ripple.lastElementChild.addEventListener('animationend', () => ripple.remove(), { once: true });
-      document.body.append(ripple);
+      const parent = button.parentElement;
+      const index = Array.prototype.indexOf.call(parent.children, button);
+      const label = button.textContent;
+      requestAnimationFrame(() => {
+        const target = parent.children[index];
+        if (!target || target.tagName !== 'BUTTON' || target.disabled || !target.isConnected || target.textContent !== label) return;
+        const rect = target.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'button-ripple';
+        ripple.setAttribute('aria-hidden', 'true');
+        ripple.style.setProperty('--ripple-size', `${Math.max(rect.width, rect.height)}px`);
+        const firstWave = document.createElement('span');
+        const secondWave = document.createElement('span');
+        secondWave.addEventListener('animationend', () => ripple.remove(), { once: true });
+        ripple.append(firstWave, secondWave);
+        target.append(ripple);
+      });
     }, true);
 
     function seedExamples() {
