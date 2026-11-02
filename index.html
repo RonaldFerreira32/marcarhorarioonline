@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#775713">
+  <title>Agendamento | Barbearia Ferreira</title>
+  <style>
+    :root{color-scheme:light;--pine:#775713;--pine-soft:#f7edcf;--mint:#d9ae4e;--cream:#fbf8ef;--paper:#fffefa;--ink:#302514;--muted:#6d6250;--line:#e7dcc2;--coral:#c58e20}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--cream);color:var(--ink);font-family:Trebuchet MS,Arial,sans-serif;line-height:1.5}
+    button{font:inherit;cursor:pointer}
+    button:focus-visible{outline:3px solid var(--coral);outline-offset:3px}
+    .shell{max-width:1100px;margin:auto;padding:0 24px 64px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:23px 0;border-bottom:1px solid var(--line)}
+    .brand{display:flex;align-items:center;gap:12px;color:var(--pine);font-weight:800;font-size:1.2rem;letter-spacing:-.035em}
+    .mark{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--pine);color:var(--mint);font-size:24px}
+    .header-note{font-size:.85rem;color:var(--muted)}
+    .intro{padding:42px 0 34px;max-width:720px}
+    h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1.08;letter-spacing:-.065em;margin:0 0 14px;color:var(--pine)}
+    .intro p{font-size:1.08rem;color:var(--muted);margin:0}
+    .layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(290px,.8fr);gap:24px;align-items:start}
+    .main{display:grid;gap:20px}
+    .panel,.summary{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:26px}
+    .section-heading{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+    .step{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--mint);color:var(--pine);font-size:.9rem;font-weight:800;flex:none}
+    h2{font-size:1.3rem;letter-spacing:-.035em;margin:0;color:var(--pine)}
+    .services{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .service{width:100%;text-align:left;border:1.5px solid var(--line);border-radius:14px;background:white;padding:16px;min-height:104px;color:var(--ink)}
+    .service:hover,.day:not(:disabled):hover,.slot:hover{border-color:var(--pine)}
+    .service.selected,.day.selected,.slot.selected{border-color:var(--pine);background:var(--pine-soft);box-shadow:inset 0 0 0 1px var(--pine)}
+    .service-name{display:block;font-weight:800;font-size:1.04rem;margin-bottom:8px}
+    .service-meta{display:flex;justify-content:space-between;gap:8px;font-size:.9rem;color:var(--muted)}
+    .service-meta strong{color:var(--pine)}
+    .calendar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px}
+    .month-title{font-weight:800;font-size:1.08rem;text-transform:capitalize;color:var(--pine)}
+    .month-controls{display:flex;gap:8px}
+    .nav{width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--pine);font-size:1.35rem;line-height:1}
+    .nav:hover{background:var(--pine-soft)}
+    .weekdays,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;text-align:center}
+    .weekdays{font-size:.8rem;font-weight:800;color:var(--muted);margin-bottom:8px}
+    .day{aspect-ratio:1;border:1.5px solid transparent;border-radius:11px;background:transparent;color:var(--ink);font-weight:700;min-width:0}
+    .day:disabled{cursor:not-allowed;color:#adb8b2}
+    .day.today:not(:disabled){border-color:var(--mint)}
+    .day.empty{visibility:hidden}
+    .hint{font-size:.86rem;color:var(--muted);margin:16px 0 0}
+    .slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+    .slot{border:1.5px solid var(--line);border-radius:10px;background:white;padding:10px 3px;color:var(--ink);font-weight:700}
+    .empty-message{color:var(--muted);margin:0;font-size:.94rem}
+    .summary{position:sticky;top:24px;background:var(--pine);border-color:var(--pine);color:white}
+    .summary h2{color:white;margin-bottom:24px}
+    .summary-row{padding:14px 0;border-top:1px solid #ffffff38}
+    .summary-label{display:block;color:#c4dbd2;font-size:.8rem;margin-bottom:4px}
+    .summary-value{display:block;font-weight:800;min-height:24px}
+    .summary .placeholder{color:#b7ccc4;font-weight:400}
+    .summary-note{font-size:.82rem;color:#c4dbd2;margin:22px 0 0}
+    @media(max-width:760px){.layout{grid-template-columns:1fr}.summary{position:static}.intro{padding:32px 0 28px}.header-note{display:none}}
+    @media(max-width:430px){.shell{padding:0 14px 40px}.panel,.summary{padding:20px}.services{grid-template-columns:1fr}.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.days,.weekdays{gap:2px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="mark" aria-hidden="true">✿</span><span>Barbearia Ferreira</span></div>
+      <span class="header-note">Um carinho em cada cuidado</span>
+    </header>
+    <main>
+      <div class="intro">
+        <h1>Um horário especial para o seu melhor amigo.</h1>
+        <p>Escolha o cuidado, o dia e o horário que combinam com vocês.</p>
+      </div>
+      <div class="layout">
+        <div class="main">
+          <section class="panel" aria-labelledby="services-title">
+            <div class="section-heading"><span class="step">1</span><h2 id="services-title">Escolha o serviço</h2></div>
+            <div class="services" id="services"></div>
+          </section>
+          <section class="panel" aria-labelledby="calendar-title">
+            <div class="section-heading"><span class="step">2</span><h2 id="calendar-title">Escolha o dia</h2></div>
+            <div class="calendar-head">
+              <span class="month-title" id="month-title" aria-live="polite"></span>
+              <div class="month-controls">
+                <button class="nav" id="previous-month" type="button" aria-label="Mês anterior">‹</button>
+                <button class="nav" id="next-month" type="button" aria-label="Mês seguinte">›</button>
+              </div>
+            </div>
+            <div class="weekdays" aria-hidden="true"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
+            <div class="days" id="days" role="group" aria-label="Dias do mês"></div>
+            <p class="hint">Domingos e dias anteriores a hoje não estão disponíveis.</p>
+          </section>
+          <section class="panel" aria-labelledby="slots-title">
+            <div class="section-heading"><span class="step">3</span><h2 id="slots-title">Escolha o horário</h2></div>
+            <div class="slots" id="slots" role="group" aria-label="Horários disponíveis"></div>
+            <p class="empty-message" id="slots-message">Selecione um dia para ver os horários.</p>
+          </section>
+        </div>
+        <aside class="summary" aria-label="Resumo do agendamento">
+          <h2>Seu agendamento</h2>
+          <div class="summary-row"><span class="summary-label">Serviço</span><span class="summary-value placeholder" id="summary-service">Escolha um serviço</span></div>
+          <div class="summary-row"><span class="summary-label">Dia</span><span class="summary-value placeholder" id="summary-day">Escolha um dia</span></div>
+          <div class="summary-row"><span class="summary-label">Horário</span><span class="summary-value placeholder" id="summary-time">Escolha um horário</span></div>
+          <p class="summary-note">Esta é uma seleção de horário. Nenhuma reserva é enviada ou salva.</p>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <script>
+    const services = [
+      { name: 'Banho', duration: '1h', price: 60 },
+      { name: 'Banho e tosa', duration: '2h', price: 110 },
+      { name: 'Hidratação', duration: '30 min', price: 40 },
+      { name: 'Tosa higiênica', duration: '30 min', price: 45 }
+    ];
+    const today = new Date();
+    let viewYear = today.getFullYear();
+    let viewMonth = today.getMonth();
+    let selectedService = null;
+    let selectedDay = null;
+    let selectedTime = null;
+    const $ = id => document.getElementById(id);
+    const currency = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    const localDateLabel = date => new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+
+    function renderServices() {
+      $('services').replaceChildren(...services.map((service, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'service' + (selectedService === index ? ' selected' : '');
+        button.setAttribute('aria-pressed', selectedService === index);
+        button.innerHTML = `<span class="service-name">${service.name}</span><span class="service-meta"><span>${service.duration}</span><strong>${currency(service.price)}</strong></span>`;
+        button.addEventListener('click', () => { selectedService = index; renderServices(); renderSummary(); });
+        return button;
+      }));
+    }
+
+    function renderCalendar() {
+      const current = new Date();
+      const first = new Date(viewYear, viewMonth, 1);
+      const count = new Date(viewYear, viewMonth + 1, 0).getDate();
+      $('month-title').textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(first);
+      const items = [];
+      for (let i = 0; i < first.getDay(); i++) {
+        const empty = document.createElement('span');
+        empty.className = 'day empty';
+        empty.setAttribute('aria-hidden', 'true');
+        items.push(empty);
+      }
+      for (let number = 1; number <= count; number++) {
+        const date = new Date(viewYear, viewMonth, number);
+        const beforeToday = new Date(date.getFullYear(), date.getMonth(), date.getDate()) < new Date(current.getFullYear(), current.getMonth(), current.getDate());
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'day' + (sameDay(date, current) ? ' today' : '') + (sameDay(date, selectedDay) ? ' selected' : '');
+        button.textContent = number;
+        button.setAttribute('aria-label', localDateLabel(date));
+        button.setAttribute('aria-pressed', sameDay(date, selectedDay) ? 'true' : 'false');
+        button.disabled = beforeToday || date.getDay() === 0;
+        button.addEventListener('click', () => { selectedDay = date; selectedTime = null; renderCalendar(); renderSlots(); renderSummary(); });
+        items.push(button);
+      }
+      $('days').replaceChildren(...items);
+    }
+
+    function renderSlots() {
+      const container = $('slots');
+      const message = $('slots-message');
+      container.replaceChildren();
+      if (!selectedDay) { message.textContent = 'Selecione um dia para ver os horários.'; message.hidden = false; return; }
+      const now = new Date();
+      const times = [];
+      for (let hour = 9; hour <= 18; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          if (hour === 18 && minute > 0) continue;
+          if (hour === 12) continue;
+          if (sameDay(selectedDay, now) && hour * 60 + minute <= now.getHours() * 60 + now.getMinutes()) continue;
+          times.push({ hour, minute });
+        }
+      }
+      if (!times.length) { message.textContent = 'Não há mais horários disponíveis neste dia. Escolha outra data.'; message.hidden = false; return; }
+      message.hidden = true;
+      container.replaceChildren(...times.map(({ hour, minute }) => {
+        const label = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'slot' + (selectedTime === label ? ' selected' : '');
+        button.textContent = label;
+        button.setAttribute('aria-pressed', selectedTime === label ? 'true' : 'false');
+        button.addEventListener('click', () => { selectedTime = label; renderSlots(); renderSummary(); });
+        return button;
+      }));
+    }
+
+    function renderSummary() {
+      const values = [
+        ['summary-service', selectedService === null ? null : `${services[selectedService].name} · ${services[selectedService].duration} · ${currency(services[selectedService].price)}`, 'Escolha um serviço'],
+        ['summary-day', selectedDay ? localDateLabel(selectedDay) : null, 'Escolha um dia'],
+        ['summary-time', selectedTime, 'Escolha um horário']
+      ];
+      values.forEach(([id, value, placeholder]) => {
+        $(id).textContent = value || placeholder;
+        $(id).classList.toggle('placeholder', !value);
+      });
+    }
+
+    $('previous-month').addEventListener('click', () => { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } renderCalendar(); });
+    $('next-month').addEventListener('click', () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderCalendar(); });
+    renderServices();
+    renderCalendar();
+    renderSlots();
+  </script>
+</body>
+</html>
+
