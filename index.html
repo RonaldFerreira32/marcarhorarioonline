@@ -72,13 +72,13 @@
 <body>
   <div class="shell">
     <header>
-      <div class="brand"><span class="mark" aria-hidden="true">✿</span><span>Barbearia Ferreira</span></div>
-      <span class="header-note">Um carinho em cada cuidado</span>
+      <div class="brand"><span class="mark" aria-hidden="true">✂</span><span>Barbearia Ferreira</span></div>
+      <span class="header-note">Seu momento, seu estilo</span>
     </header>
     <main>
       <div class="intro">
-        <h1>Um horário especial para o seu melhor amigo.</h1>
-        <p>Escolha o cuidado, o dia e o horário que combinam com vocês.</p>
+        <h1>Seu próximo corte começa aqui.</h1>
+        <p>Escolha o serviço, o dia e o horário que combinam com você.</p>
       </div>
       <div class="layout">
         <div class="main">
@@ -108,8 +108,7 @@
             <div class="section-heading"><span class="step">4</span><h2 id="booking-title">Seus dados</h2></div>
             <form id="booking-form">
               <div class="fields">
-                <label class="field">Nome do tutor<input id="tutor-name" name="tutor" type="text" autocomplete="name" required maxlength="100"></label>
-                <label class="field">Nome do pet<input id="pet-name" name="pet" type="text" required maxlength="100"></label>
+                <label class="field">Seu nome<input id="client-name" name="client" type="text" autocomplete="name" required minlength="2" maxlength="100"></label>
                 <label class="field">Telefone<input id="phone" name="phone" type="tel" autocomplete="tel" required maxlength="30"></label>
               </div>
               <button class="confirm-button" type="submit">Confirmar agendamento</button>
@@ -125,7 +124,7 @@
           <div class="summary-row"><span class="summary-label">Serviço</span><span class="summary-value placeholder" id="summary-service">Escolha um serviço</span></div>
           <div class="summary-row"><span class="summary-label">Dia</span><span class="summary-value placeholder" id="summary-day">Escolha um dia</span></div>
           <div class="summary-row"><span class="summary-label">Horário</span><span class="summary-value placeholder" id="summary-time">Escolha um horário</span></div>
-          <p class="summary-note">Agendamentos ficam disponíveis apenas enquanto esta página estiver aberta.</p>
+          <p class="summary-note">Os horários confirmados ficam reservados apenas enquanto esta página estiver aberta.</p>
         </aside>
       </div>
     </main>
@@ -253,10 +252,9 @@
 
     $('booking-form').addEventListener('submit', event => {
       event.preventDefault();
-      const tutor = $('tutor-name').value.trim();
-      const pet = $('pet-name').value.trim();
+      const client = $('client-name').value.trim();
       const phone = $('phone').value.trim();
-      if (!tutor || !pet || !phone) { $('booking-form').reportValidity(); return; }
+      if (!client || !phone) { $('booking-form').reportValidity(); return; }
       if (selectedService === null || !selectedDay || !selectedTime) return;
       const service = services[selectedService];
       const start = timeMinutes(selectedTime);
@@ -266,8 +264,8 @@
         return;
       }
       const date = selectedDay;
-      bookings.push({ dateKey: localDateKey(date), start, end: start + service.minutes, service: service.name, price: service.price, tutor, pet, phone });
-      $('confirmation-details').textContent = `${service.name} para ${pet} · ${localDateLabel(date)} · ${timeLabel(start)} às ${timeLabel(start + service.minutes)} · ${currency(service.price)}.`;
+      bookings.push({ dateKey: localDateKey(date), start, end: start + service.minutes, service: service.name, price: service.price, client, phone });
+      $('confirmation-details').textContent = `${service.name} para ${client} · ${localDateLabel(date)} · ${timeLabel(start)} às ${timeLabel(start + service.minutes)} · ${currency(service.price)}.`;
       $('confirmation').hidden = false;
       $('booking-form').reset();
       selectedTime = null;
