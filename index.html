@@ -406,13 +406,14 @@
     $('next-month').addEventListener('click', () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderCalendar(); });
     function animateArrival(direction, ...elements) {
       if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-      const origin = direction < 0 ? 'left center' : 'right center';
+      const distance = window.innerWidth <= 560 ? 8 : 24;
+      const offset = direction < 0 ? distance : -distance;
       elements.forEach(element => {
         element.getAnimations?.().forEach(animation => animation.cancel());
         element.animate?.([
-          { opacity: .88, transform: `perspective(1400px) rotateY(${direction * 14}deg)`, transformOrigin: origin },
-          { opacity: 1, transform: 'perspective(1400px) rotateY(0deg)', transformOrigin: origin }
-        ], { duration: 440, easing: 'ease-out' });
+          { opacity: .85, transform: `translateX(${offset}px)` },
+          { opacity: 1, transform: 'translateX(0)' }
+        ], { duration: 360, easing: 'cubic-bezier(.2,.7,.2,1)' });
       });
     }
     $('view-bookings').addEventListener('click', () => {
