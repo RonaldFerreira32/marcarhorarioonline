@@ -54,6 +54,7 @@
     .slot.selected{border-color:var(--pine);background:var(--pine);color:white}
     .slot:disabled{cursor:not-allowed;background:#eef1ef;color:#9ba7a1;border-color:#e1e6e2}
     .empty-message{color:var(--muted);margin:0;font-size:.94rem}
+    .selection-error{margin:14px 0 0;color:#a33429;font-size:.92rem;font-weight:800}
     [hidden]{display:none!important}
     .fields{display:grid;gap:14px}
     .field{display:grid;gap:6px;font-weight:700;font-size:.92rem}
@@ -123,6 +124,7 @@
             <div class="section-heading"><span class="step">3</span><h2 id="slots-title">Escolha o horário</h2></div>
             <div class="slots" id="slots" role="group" aria-label="Horários disponíveis"></div>
             <p class="empty-message" id="slots-message">Selecione um dia para ver os horários.</p>
+            <p class="selection-error" id="selection-error" role="alert" hidden></p>
           </section>
           <section class="panel" id="booking-panel" aria-labelledby="booking-title" hidden>
             <div class="section-heading"><span class="step">4</span><h2 id="booking-title">Seus dados</h2></div>
@@ -249,7 +251,8 @@
       $('booking-panel').hidden = selectedService === null || !selectedDay || !selectedTime;
     }
 
-    function clearConfirmation() { $('confirmation').hidden = true; }
+    function showSelectionError(message) { $('selection-error').textContent = message; $('selection-error').hidden = false; }
+    function clearConfirmation() { $('confirmation').hidden = true; $('selection-error').hidden = true; }
 
     function renderServices() {
       $('services').replaceChildren(...services.map((service, index) => {
@@ -323,17 +326,24 @@
         const occupied = isBlockOccupied(selectedDay, start);
         button.disabled = occupied || (selectedService !== null && !canBook(selectedDay, start, services[selectedService].minutes));
         if (button.disabled) button.setAttribute('aria-label', `${label}, ${occupied ? 'ocupado' : 'indisponível para este serviço'}`);
-        button.addEventListener('click', () => { selectedTime = label; clearConfirmation(); renderSlots(); renderSummary(); updateBookingPanel(); });
+        button.addEventListener('click', () => {
+          if (selectedService === null) { showSelectionError('Escolha um serviço antes de selecionar um horário.'); return; }
+          if (!canBook(selectedDay, start, services[selectedService].minutes)) { showSelectionError('Este horário não está disponível para o serviço escolhido.'); return; }
+          selectedTime = label; clearConfirmation(); renderSlots(); renderSummary(); updateBookingPanel();
+        });
         return button;
       }));
     }
 
     $('booking-form').addEventListener('submit', event => {
       event.preventDefault();
+      if (selectedService === null || !selectedDay || !selectedTime) {
+        showSelectionError('Selecione serviço, dia e horário antes de confirmar.');
+        return;
+      }
       const client = $('client-name').value.trim();
       const phone = $('phone').value.trim();
       if (!client || !phone) { $('booking-form').reportValidity(); return; }
-      if (selectedService === null || !selectedDay || !selectedTime) return;
       const service = services[selectedService];
       const start = timeMinutes(selectedTime);
       if (!canBook(selectedDay, start, service.minutes)) {
