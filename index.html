@@ -84,6 +84,11 @@
     .booking-item .booking-price{color:var(--pine);font-weight:800}
     .cancel-button{border:1px solid #eab7af;border-radius:11px;background:#fff5f3;color:#a33429;padding:9px 13px;min-height:44px;font-weight:800;flex:none}
     .cancel-button:hover{background:#ffe7e2}
+    .water-ripple{position:fixed;left:0;top:0;z-index:100;pointer-events:none}
+    .water-ripple span{position:absolute;left:0;top:0;width:18px;height:18px;border:2px solid #087c78aa;border-radius:50%;background:#a7e8d844;transform:translate(-50%,-50%) scale(.3);animation:water-wave .65s ease-out forwards}
+    .water-ripple span+span{animation-delay:.09s}
+    @keyframes water-wave{to{opacity:0;transform:translate(-50%,-50%) scale(7)}}
+    @media(prefers-reduced-motion:reduce){.water-ripple{display:none}}
     @media(max-width:760px){.layout{grid-template-columns:minmax(0,1fr)}.summary{position:static}.intro{padding:32px 0 28px}.header-note{display:none}}
     @media(max-width:560px){.shell{padding:0 16px 48px}header{align-items:stretch;flex-direction:column;gap:14px;padding:18px 0}.header-actions,.view-button{width:100%}.intro{padding:30px 0 25px}.panel,.summary{padding:22px}.bookings-head{align-items:flex-start;flex-direction:column}.back-button{width:100%}}
     @media(max-width:430px){.shell{padding:0 10px 40px}.panel,.summary{padding:18px}.services{grid-template-columns:minmax(0,1fr);gap:12px}.service{min-height:92px;padding:16px}.slots{grid-template-columns:repeat(2,minmax(0,1fr))}.days,.weekdays{gap:3px}.booking-item{align-items:stretch;flex-direction:column;padding:15px}.cancel-button{width:100%}.bookings-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:15px}.calendar-head{gap:8px}.month-title{font-size:1rem}}
@@ -178,6 +183,21 @@
     const localDateKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const timeLabel = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
     const timeMinutes = label => Number(label.slice(0, 2)) * 60 + Number(label.slice(3, 5));
+
+    $('schedule-view').addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button || button.disabled || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+      const rect = button.getBoundingClientRect();
+      const x = event.detail ? event.clientX : rect.left + rect.width / 2;
+      const y = event.detail ? event.clientY : rect.top + rect.height / 2;
+      const ripple = document.createElement('span');
+      ripple.className = 'water-ripple';
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      ripple.innerHTML = '<span></span><span></span>';
+      ripple.lastElementChild.addEventListener('animationend', () => ripple.remove(), { once: true });
+      document.body.append(ripple);
+    }, true);
 
     function seedExamples() {
       const names = ['Ana Souza', 'Bruno Lima', 'Carlos Nunes', 'Diego Alves', 'Eduardo Rocha', 'Felipe Costa'];
