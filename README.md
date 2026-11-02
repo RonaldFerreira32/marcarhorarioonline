@@ -15,7 +15,7 @@ Os preços são referências e podem variar conforme a cidade e o estabeleciment
 
 ## Como usar
 
-Abra `index.html` em um navegador. Escolha o serviço, o dia e um horário disponível. Informe seu nome e telefone e confirme. A confirmação mostra serviço, dia, início, fim e preço.
+Abra `index.html` em um navegador. Escolha o serviço, o dia e um horário disponível. Informe seu nome e telefone e confirme. A confirmação mostra serviço, dia, início, fim e preço. O botão **Meus agendamentos** abre a lista de reservas futuras, com quantidade e valor total. Cada reserva pode ser cancelada após confirmação, liberando o horário imediatamente.
 
 ## Regras de horários
 
@@ -24,6 +24,10 @@ Abra `index.html` em um navegador. Escolha o serviço, o dia e um horário dispo
 - Um serviço só pode começar quando toda a sua duração couber antes do almoço ou até as 18h, sem conflitar com outro agendamento.
 - Cada agendamento ocupa todos os blocos de 30 minutos da sua duração. Os blocos ocupados ficam desabilitados.
 - No dia atual, horários passados não são exibidos. As datas usam o horário local.
+
+## Dados de demonstração
+
+A página começa com seis agendamentos fictícios distribuídos pelos próximos dias úteis. Eles podem ser cancelados na própria lista.
 
 ## Limitação atual
 
