@@ -404,12 +404,24 @@
 
     $('previous-month').addEventListener('click', () => { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } renderCalendar(); });
     $('next-month').addEventListener('click', () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderCalendar(); });
+    function animateArrival(...elements) {
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+      elements.forEach(element => {
+        element.getAnimations?.().forEach(animation => animation.cancel());
+        element.animate?.([
+          { opacity: 0, transform: 'translateY(20px) scale(.97)' },
+          { opacity: 1, transform: 'translateY(-3px) scale(1.005)', offset: .78 },
+          { opacity: 1, transform: 'translateY(0) scale(1)' }
+        ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      });
+    }
     $('view-bookings').addEventListener('click', () => {
       renderBookings();
       $('schedule-intro').hidden = true;
       $('schedule-view').hidden = true;
       $('bookings-view').hidden = false;
       $('view-bookings').hidden = true;
+      animateArrival($('bookings-view'));
     });
     $('view-schedule').addEventListener('click', () => {
       $('schedule-intro').hidden = false;
@@ -417,6 +429,7 @@
       $('bookings-view').hidden = true;
       $('view-bookings').hidden = false;
       renderSlots();
+      animateArrival($('schedule-intro'), $('schedule-view'));
     });
     seedExamples();
     renderServices();
