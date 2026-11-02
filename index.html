@@ -16,6 +16,9 @@
     .brand{display:flex;align-items:center;gap:12px;color:var(--pine);font-weight:800;font-size:1.2rem;letter-spacing:-.035em}
     .mark{display:grid;place-items:center;width:42px;height:42px;border-radius:15px;background:var(--pine);color:white;font-size:23px;box-shadow:0 5px 12px #087c7830}
     .header-note{font-size:.85rem;color:var(--muted)}
+    .header-actions{display:flex;align-items:center;gap:18px}
+    .view-button,.back-button{border:1.5px solid var(--pine);border-radius:13px;background:var(--pine-soft);color:var(--pine);padding:10px 14px;font-weight:800}
+    .view-button:hover,.back-button:hover{background:var(--mint)}
     .intro{padding:42px 0 34px;max-width:720px;margin:auto;text-align:center}
     h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1.08;letter-spacing:-.055em;margin:0 0 14px;color:var(--pine)}
     .intro p{font-size:1.08rem;color:var(--muted);margin:0}
@@ -67,22 +70,34 @@
     .summary-value{display:block;font-weight:800;min-height:24px}
     .summary .placeholder{color:#c2e3de;font-weight:400}
     .summary-note{font-size:.82rem;color:#cfefeb;margin:22px 0 0}
+    .bookings-panel{max-width:760px;margin:0 auto}
+    .bookings-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+    .bookings-stats{display:flex;gap:24px;padding:16px 20px;border-radius:15px;background:var(--pine-soft);margin-bottom:18px}
+    .bookings-stats span{display:block;color:var(--muted);font-size:.82rem}
+    .bookings-stats strong{display:block;color:var(--pine);font-size:1.3rem}
+    .bookings-list{display:grid;gap:12px}
+    .booking-item{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid var(--line);border-radius:16px;background:white;padding:16px 18px;box-shadow:0 5px 14px #1d6c5e12}
+    .booking-item strong{display:block;color:var(--ink)}
+    .booking-item p{margin:4px 0;color:var(--muted);font-size:.9rem}
+    .booking-item .booking-price{color:var(--pine);font-weight:800}
+    .cancel-button{border:1px solid #eab7af;border-radius:11px;background:#fff5f3;color:#a33429;padding:9px 13px;font-weight:800;flex:none}
+    .cancel-button:hover{background:#ffe7e2}
     @media(max-width:760px){.layout{grid-template-columns:1fr}.summary{position:static}.intro{padding:32px 0 28px}.header-note{display:none}}
-    @media(max-width:430px){.shell{padding:0 14px 40px}.panel,.summary{padding:20px}.services{grid-template-columns:1fr}.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.days,.weekdays{gap:2px}}
+    @media(max-width:430px){.shell{padding:0 14px 40px}.panel,.summary{padding:20px}.services{grid-template-columns:1fr}.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.days,.weekdays{gap:2px}.booking-item{align-items:flex-start;flex-direction:column}.bookings-stats{gap:12px;justify-content:space-between}.bookings-head{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
   <div class="shell">
     <header>
-      <div class="brand"><span class="mark" aria-hidden="true">🐾</span><span>Barbearia Ferreira</span></div>
-      <span class="header-note">Seu momento, seu estilo</span>
+      <div class="brand"><span class="mark" aria-hidden="true">✂</span><span>Barbearia Ferreira</span></div>
+      <div class="header-actions"><span class="header-note">Seu momento, seu estilo</span><button class="view-button" id="view-bookings" type="button">Meus agendamentos</button></div>
     </header>
     <main>
-      <div class="intro">
+      <div class="intro" id="schedule-intro">
         <h1>Seu próximo corte começa aqui.</h1>
         <p>Escolha o serviço, o dia e o horário que combinam com você.</p>
       </div>
-      <div class="layout">
+      <div class="layout" id="schedule-view">
         <div class="main">
           <section class="panel" aria-labelledby="services-title">
             <div class="section-heading"><span class="step">1</span><h2 id="services-title">Escolha o serviço</h2></div>
@@ -129,6 +144,12 @@
           <p class="summary-note">Os horários confirmados ficam reservados apenas enquanto esta página estiver aberta.</p>
         </aside>
       </div>
+      <section class="panel bookings-panel" id="bookings-view" aria-labelledby="bookings-title" hidden>
+        <div class="bookings-head"><h2 id="bookings-title">Meus agendamentos</h2><button class="back-button" id="view-schedule" type="button">Voltar ao agendamento</button></div>
+        <div class="bookings-stats"><div><span>Total de agendamentos</span><strong id="booking-count">0</strong></div><div><span>Valor total</span><strong id="booking-total">R$ 0,00</strong></div></div>
+        <div class="bookings-list" id="bookings-list"></div>
+        <p class="empty-message" id="bookings-empty" hidden>Nenhum agendamento futuro por aqui. Escolha um serviço e marque seu horário!</p>
+      </section>
     </main>
   </div>
   <script>
@@ -145,6 +166,7 @@
     let selectedDay = null;
     let selectedTime = null;
     const bookings = [];
+    let nextBookingId = 1;
     const $ = id => document.getElementById(id);
     const currency = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -152,6 +174,57 @@
     const localDateKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const timeLabel = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
     const timeMinutes = label => Number(label.slice(0, 2)) * 60 + Number(label.slice(3, 5));
+
+    function seedExamples() {
+      const names = ['Ana Souza', 'Bruno Lima', 'Carlos Nunes', 'Diego Alves', 'Eduardo Rocha', 'Felipe Costa'];
+      let date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      for (let i = 0; i < names.length; date.setDate(date.getDate() + 1)) {
+        if (date.getDay() === 0 || date.getDay() === 6) continue;
+        const service = services[i % services.length];
+        const start = 9 * 60 + (i % 2) * 60;
+        bookings.push({ id: nextBookingId++, dateKey: localDateKey(date), start, end: start + service.minutes, service: service.name, price: service.price, client: names[i], phone: '', example: true });
+        i++;
+      }
+    }
+
+    function renderBookings() {
+      const now = new Date();
+      const todayKey = localDateKey(now);
+      const upcoming = bookings.filter(booking => booking.dateKey > todayKey || (booking.dateKey === todayKey && booking.start > now.getHours() * 60 + now.getMinutes()))
+        .sort((a, b) => a.dateKey.localeCompare(b.dateKey) || a.start - b.start);
+      $('booking-count').textContent = String(upcoming.length);
+      $('booking-total').textContent = currency(upcoming.reduce((sum, booking) => sum + booking.price, 0));
+      $('bookings-empty').hidden = upcoming.length > 0;
+      $('bookings-list').replaceChildren(...upcoming.map(booking => {
+        const [year, month, day] = booking.dateKey.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        const card = document.createElement('article');
+        card.className = 'booking-item';
+        const details = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = booking.service;
+        const when = document.createElement('p');
+        when.textContent = `${booking.client} · ${localDateLabel(date)} · ${timeLabel(booking.start)} às ${timeLabel(booking.end)}${booking.example ? ' · Exemplo' : ''}`;
+        const price = document.createElement('span');
+        price.className = 'booking-price';
+        price.textContent = currency(booking.price);
+        details.append(title, when, price);
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'cancel-button';
+        cancel.textContent = 'Cancelar';
+        cancel.setAttribute('aria-label', `Cancelar ${booking.service} em ${localDateLabel(date)} às ${timeLabel(booking.start)}`);
+        cancel.addEventListener('click', () => {
+          if (!window.confirm(`Cancelar ${booking.service} em ${localDateLabel(date)} às ${timeLabel(booking.start)}?`)) return;
+          const index = bookings.findIndex(item => item.id === booking.id);
+          if (index !== -1) bookings.splice(index, 1);
+          renderBookings();
+          renderSlots();
+        });
+        card.append(details, cancel);
+        return card;
+      }));
+    }
 
     function isBlockOccupied(date, start) {
       return bookings.some(booking => booking.dateKey === localDateKey(date) && start < booking.end && start + 30 > booking.start);
@@ -266,12 +339,12 @@
         return;
       }
       const date = selectedDay;
-      bookings.push({ dateKey: localDateKey(date), start, end: start + service.minutes, service: service.name, price: service.price, client, phone });
+      bookings.push({ id: nextBookingId++, dateKey: localDateKey(date), start, end: start + service.minutes, service: service.name, price: service.price, client, phone, example: false });
       $('confirmation-details').textContent = `${service.name} para ${client} · ${localDateLabel(date)} · ${timeLabel(start)} às ${timeLabel(start + service.minutes)} · ${currency(service.price)}.`;
       $('confirmation').hidden = false;
       $('booking-form').reset();
       selectedTime = null;
-      renderSlots(); renderSummary(); updateBookingPanel();
+      renderSlots(); renderSummary(); updateBookingPanel(); renderBookings();
     });
 
     function renderSummary() {
@@ -288,9 +361,25 @@
 
     $('previous-month').addEventListener('click', () => { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } renderCalendar(); });
     $('next-month').addEventListener('click', () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderCalendar(); });
+    $('view-bookings').addEventListener('click', () => {
+      renderBookings();
+      $('schedule-intro').hidden = true;
+      $('schedule-view').hidden = true;
+      $('bookings-view').hidden = false;
+      $('view-bookings').hidden = true;
+    });
+    $('view-schedule').addEventListener('click', () => {
+      $('schedule-intro').hidden = false;
+      $('schedule-view').hidden = false;
+      $('bookings-view').hidden = true;
+      $('view-bookings').hidden = false;
+      renderSlots();
+    });
+    seedExamples();
     renderServices();
     renderCalendar();
     renderSlots();
+    renderBookings();
   </script>
 </body>
 </html>
