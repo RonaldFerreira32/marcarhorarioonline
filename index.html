@@ -344,6 +344,15 @@
       });
     }
 
+    function scrollToStep(id) {
+      const panel = $(id);
+      if (panel.hidden) return;
+      let top = 0;
+      for (let element = panel; element; element = element.offsetParent) top += element.offsetTop;
+      top = Math.max(0, top - $('site-header').offsetHeight - 16);
+      window.scrollTo({ top, behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+
     function showSelectionError(message) { $('selection-error').textContent = message; $('selection-error').hidden = false; }
     function showFormError(message) { $('form-error').textContent = message; $('form-error').hidden = false; }
     function clearConfirmation() { $('confirmation').hidden = true; $('selection-error').hidden = true; $('form-error').hidden = true; }
@@ -412,7 +421,7 @@
         button.addEventListener('click', () => {
           selectedService = index;
           if (selectedTime && !canBook(selectedDay, timeMinutes(selectedTime), service.minutes)) selectedTime = null;
-          clearConfirmation(); renderServices(); renderSlots(); renderSummary(); updateBookingPanel();
+          clearConfirmation(); renderServices(); renderSlots(); renderSummary(); updateBookingPanel(); scrollToStep('calendar-panel');
         });
         return button;
       }));
@@ -441,7 +450,7 @@
         button.setAttribute('aria-label', localDateLabel(date));
         button.setAttribute('aria-pressed', sameDay(date, selectedDay) ? 'true' : 'false');
         button.disabled = beforeToday || date.getDay() === 0;
-        button.addEventListener('click', () => { selectedDay = date; selectedTime = null; clearConfirmation(); renderCalendar(); renderSlots(); renderSummary(); updateBookingPanel(); });
+        button.addEventListener('click', () => { selectedDay = date; selectedTime = null; clearConfirmation(); renderCalendar(); renderSlots(); renderSummary(); updateBookingPanel(); scrollToStep('slots-panel'); });
         items.push(button);
       }
       $('days').replaceChildren(...items);
@@ -479,7 +488,7 @@
         button.addEventListener('click', () => {
           if (selectedService === null) { showSelectionError('Escolha um serviço antes de selecionar um horário.'); return; }
           if (!canBook(selectedDay, start, services[selectedService].minutes)) { showSelectionError('Este horário não está disponível para o serviço escolhido.'); return; }
-          selectedTime = label; clearConfirmation(); renderSlots(); renderSummary(); updateBookingPanel();
+          selectedTime = label; clearConfirmation(); renderSlots(); renderSummary(); updateBookingPanel(); scrollToStep('booking-panel');
         });
         return button;
       }));
