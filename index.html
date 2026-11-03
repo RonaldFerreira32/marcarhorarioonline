@@ -43,6 +43,12 @@
     .portfolio-card:hover img{transform:scale(1.07);filter:saturate(1)}
     .portfolio-card figcaption{position:absolute;inset:auto 0 0;padding:48px 20px 20px;background:linear-gradient(transparent,#111b);color:white;font-family:"Tenor Sans",Georgia,serif;font-size:1.28rem}
     .portfolio-note{margin:18px 0 0;color:var(--muted);font-size:.82rem}
+    .portfolio-finale{display:none;position:relative}
+    .portfolio.stacked .portfolio-finale.active{display:block}
+    .portfolio-finale-sticky{position:sticky;top:var(--portfolio-top,80px);height:calc(100svh - var(--portfolio-top,80px));display:grid;place-items:center;overflow:hidden;pointer-events:none;will-change:opacity}
+    .portfolio-finale-deck{position:relative;width:min(72vw,340px);height:min(52svh,420px)}
+    .portfolio-finale-card{position:absolute;inset:0;margin:0;overflow:hidden;border-radius:20px;background:#e7e1d7;box-shadow:0 18px 36px #1a1a1a30;backface-visibility:hidden;will-change:transform}
+    .portfolio-finale-card img{display:block;width:100%;height:100%;object-fit:cover}
     .portfolio.stacked{height:auto!important}
     .portfolio.stacked .portfolio-sticky{position:static;height:auto}
     .portfolio.stacked .portfolio-viewport{overflow:visible}
@@ -142,6 +148,7 @@
         </div></div>
         <p class="portfolio-note">Imagens ilustrativas de estilos masculinos.</p>
         </div>
+        <div class="portfolio-finale" id="portfolio-finale" aria-hidden="true"><div class="portfolio-finale-sticky" id="portfolio-finale-sticky"><div class="portfolio-finale-deck" id="portfolio-finale-deck"></div></div></div>
       </section>
       <div class="layout service-only" id="schedule-view">
         <div class="main">
@@ -359,14 +366,53 @@
 
     let portfolioDistance = 0;
     let portfolioExitDistance = 0;
+    let portfolioFinaleDistance = 0;
     let portfolioStacked = false;
     const smoothStep = value => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
+    const cardSpread = [
+      { x: -.82, y: -.36, rotation: -38 },
+      { x: .72, y: -.28, rotation: 34 },
+      { x: -.68, y: .45, rotation: -44 },
+      { x: .84, y: .38, rotation: 42 }
+    ];
+    function updateMobilePortfolioFinale() {
+      const finale = $('portfolio-finale');
+      if (!finale.classList.contains('active')) return;
+      const start = finale.getBoundingClientRect().top + window.scrollY - $('site-header').offsetHeight;
+      const progress = Math.max(0, Math.min(1, (window.scrollY - start) / portfolioFinaleDistance));
+      const reveal = smoothStep(progress / .14);
+      const scatter = smoothStep((progress - .14) / .86);
+      const sticky = $('portfolio-finale-sticky');
+      sticky.style.opacity = String(Number((reveal * (1 - smoothStep((progress - .75) / .25))).toFixed(3)));
+      for (const [index, card] of Array.from($('portfolio-finale-deck').children).entries()) {
+        const target = cardSpread[index % cardSpread.length];
+        const x = target.x * window.innerWidth * scatter;
+        const y = target.y * sticky.offsetHeight * scatter;
+        const rotation = (index - 1.5) * 5 * (1 - scatter) + target.rotation * scatter;
+        card.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0) rotate(${rotation.toFixed(1)}deg) scale(${(.72 - .2 * scatter).toFixed(3)})`;
+      }
+    }
+    function initMobilePortfolioFinale() {
+      const cards = Array.from($('portfolio-track').children).map((card, index) => {
+        const photo = card.querySelector('img');
+        const figure = document.createElement('figure');
+        figure.className = 'portfolio-finale-card';
+        figure.style.zIndex = String(index + 1);
+        const image = document.createElement('img');
+        image.src = photo.src;
+        image.alt = '';
+        figure.append(image);
+        return figure;
+      });
+      $('portfolio-finale-deck').replaceChildren(...cards);
+    }
     function updatePortfolioScroll() {
       if ($('portfolio-view').hidden) return;
       if (portfolioStacked) {
         for (const card of $('portfolio-track').children) {
           if (card.getBoundingClientRect().top < window.innerHeight * .88) card.classList.add('is-visible');
         }
+        updateMobilePortfolioFinale();
         return;
       }
       const start = $('portfolio-view').getBoundingClientRect().top + window.scrollY - $('site-header').offsetHeight;
@@ -385,16 +431,10 @@
       track.style.transform = `translate3d(${-Math.round(progress * portfolioDistance)}px,0,0)`;
       sticky.style.opacity = String(Number((1 - smoothStep((exit - .76) / .24)).toFixed(3)));
       const middle = (cards.length - 1) / 2;
-      const spread = [
-        { x: -.82, y: -.36, rotation: -38 },
-        { x: .72, y: -.28, rotation: 34 },
-        { x: -.68, y: .45, rotation: -44 },
-        { x: .84, y: .38, rotation: 42 }
-      ];
       for (const [index, card] of cards.entries()) {
         const center = centers[index];
         const focus = Math.max(0, Math.min(1, 1 - Math.abs(center - width / 2) / Math.max(1, width * .8)));
-        const target = spread[index % spread.length];
+        const target = cardSpread[index % cardSpread.length];
         const deckX = width / 2 + (index - middle) * 6 - center;
         const spreadX = width / 2 + target.x * width - center;
         const x = deckX * gather * (1 - scatter) + spreadX * scatter;
@@ -411,8 +451,11 @@
     }
     function measurePortfolio() {
       const section = $('portfolio-view');
-      portfolioStacked = window.innerWidth <= 760 || window.innerHeight < 680 || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const reducedMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      portfolioStacked = window.innerWidth <= 760 || window.innerHeight < 680 || reducedMotion;
       section.classList.toggle('stacked', portfolioStacked);
+      const finale = $('portfolio-finale');
+      finale.classList.toggle('active', portfolioStacked && !reducedMotion);
       if (portfolioStacked) {
         section.style.height = '';
         $('portfolio-track').style.transform = '';
@@ -422,9 +465,16 @@
           card.style.opacity = '';
           card.style.zIndex = '';
         }
+        if (finale.classList.contains('active')) {
+          finale.style.setProperty('--portfolio-top', `${$('site-header').offsetHeight}px`);
+          portfolioFinaleDistance = Math.max(500, Math.round(window.innerHeight * .8));
+          finale.style.height = `${$('portfolio-finale-sticky').offsetHeight + portfolioFinaleDistance}px`;
+        } else finale.style.height = '';
         updatePortfolioScroll();
         return;
       }
+      finale.style.height = '';
+      $('portfolio-finale-sticky').style.opacity = '';
       section.style.setProperty('--portfolio-top', `${$('site-header').offsetHeight}px`);
       portfolioDistance = Math.max(0, $('portfolio-track').scrollWidth - $('portfolio-viewport').clientWidth);
       portfolioExitDistance = portfolioDistance > 1 ? Math.max(560, Math.round(window.innerHeight * .9)) : 0;
@@ -648,6 +698,7 @@
     const resetOpeningScroll = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     window.addEventListener('pageshow', resetOpeningScroll);
     resetOpeningScroll();
+    initMobilePortfolioFinale();
     seedExamples();
     renderServices();
     renderCalendar();
