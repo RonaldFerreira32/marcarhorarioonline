@@ -620,6 +620,10 @@
       measurePortfolio();
       animateArrival(1, $('schedule-view'));
     });
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+    const resetOpeningScroll = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    window.addEventListener('pageshow', resetOpeningScroll);
+    resetOpeningScroll();
     seedExamples();
     renderServices();
     renderCalendar();
