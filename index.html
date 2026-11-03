@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-N6K8bRv7WxNd0xc6+AoJ+t/YACLQdJtlzPWBXRU9HP4='; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'; frame-src 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#087c78">
   <title>Agendamento | Barbearia Ferreira</title>
@@ -498,7 +499,17 @@
         button.type = 'button';
         button.className = 'service' + (selectedService === index ? ' selected' : '');
         button.setAttribute('aria-pressed', selectedService === index);
-        button.innerHTML = `<span class="service-name">${service.name}</span><span class="service-meta"><span>${service.duration}</span><strong>${currency(service.price)}</strong></span>`;
+        const name = document.createElement('span');
+        name.className = 'service-name';
+        name.textContent = service.name;
+        const meta = document.createElement('span');
+        meta.className = 'service-meta';
+        const duration = document.createElement('span');
+        duration.textContent = service.duration;
+        const price = document.createElement('strong');
+        price.textContent = currency(service.price);
+        meta.append(duration, price);
+        button.append(name, meta);
         button.addEventListener('click', () => {
           selectedService = index;
           if (selectedTime && !canBook(selectedDay, timeMinutes(selectedTime), service.minutes)) selectedTime = null;
