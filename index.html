@@ -370,10 +370,10 @@
     let portfolioStacked = false;
     const smoothStep = value => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
     const cardSpread = [
-      { x: -.82, y: -.36, rotation: -38 },
-      { x: .72, y: -.28, rotation: 34 },
-      { x: -.68, y: .45, rotation: -44 },
-      { x: .84, y: .38, rotation: 42 }
+      { x: -.34, y: -.15, rotation: -20 },
+      { x: .34, y: -.12, rotation: 22 },
+      { x: -.28, y: .17, rotation: -24 },
+      { x: .28, y: .14, rotation: 26 }
     ];
     function updateMobilePortfolioFinale() {
       const finale = $('portfolio-finale');
@@ -382,14 +382,16 @@
       const progress = Math.max(0, Math.min(1, (window.scrollY - start) / portfolioFinaleDistance));
       const reveal = smoothStep(progress / .14);
       const scatter = smoothStep((progress - .14) / .86);
+      const dissolve = smoothStep((progress - .68) / .32);
       const sticky = $('portfolio-finale-sticky');
-      sticky.style.opacity = String(Number((reveal * (1 - smoothStep((progress - .75) / .25))).toFixed(3)));
+      sticky.style.opacity = String(Number((reveal * (1 - dissolve)).toFixed(3)));
       for (const [index, card] of Array.from($('portfolio-finale-deck').children).entries()) {
         const target = cardSpread[index % cardSpread.length];
-        const x = target.x * window.innerWidth * scatter;
-        const y = target.y * sticky.offsetHeight * scatter;
+        const x = target.x * window.innerWidth * .75 * scatter;
+        const y = target.y * sticky.offsetHeight * scatter - 18 * dissolve;
         const rotation = (index - 1.5) * 5 * (1 - scatter) + target.rotation * scatter;
-        card.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0) rotate(${rotation.toFixed(1)}deg) scale(${(.72 - .2 * scatter).toFixed(3)})`;
+        card.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0) rotate(${rotation.toFixed(1)}deg) scale(${(.72 - .16 * scatter - .1 * dissolve).toFixed(3)})`;
+        card.style.filter = `blur(${(5 * dissolve).toFixed(1)}px)`;
       }
     }
     function initMobilePortfolioFinale() {
@@ -421,6 +423,7 @@
       const exit = portfolioExitDistance > 0 ? Math.max(0, Math.min(1, (position - portfolioDistance) / portfolioExitDistance)) : 0;
       const gather = smoothStep(exit / .42);
       const scatter = smoothStep((exit - .42) / .58);
+      const dissolve = smoothStep((exit - .68) / .32);
       const track = $('portfolio-track');
       const viewport = $('portfolio-viewport');
       const sticky = $('portfolio-sticky');
@@ -429,7 +432,7 @@
       const cards = Array.from(track.children);
       const centers = cards.map(card => card.offsetLeft + card.offsetWidth / 2 - progress * portfolioDistance);
       track.style.transform = `translate3d(${-Math.round(progress * portfolioDistance)}px,0,0)`;
-      sticky.style.opacity = String(Number((1 - smoothStep((exit - .76) / .24)).toFixed(3)));
+      sticky.style.opacity = String(Number((1 - dissolve).toFixed(3)));
       const middle = (cards.length - 1) / 2;
       for (const [index, card] of cards.entries()) {
         const center = centers[index];
@@ -440,13 +443,14 @@
         const x = deckX * gather * (1 - scatter) + spreadX * scatter;
         const deckY = (index - middle) * -5;
         const spreadY = target.y * height;
-        const y = ((1 - focus) * 20) * (1 - gather) + deckY * gather * (1 - scatter) + spreadY * scatter;
+        const y = ((1 - focus) * 20) * (1 - gather) + deckY * gather * (1 - scatter) + spreadY * scatter - 24 * dissolve;
         const deckRotation = (index - middle) * 5;
         const rotation = deckRotation * gather * (1 - scatter) + target.rotation * scatter;
-        const scale = (.92 + .08 * focus) * (1 - gather) + .68 * gather * (1 - scatter) + .5 * scatter;
+        const scale = (.92 + .08 * focus) * (1 - gather) + .68 * gather * (1 - scatter) + .5 * scatter - .08 * dissolve;
         card.style.zIndex = String(index + 1);
         card.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0) rotate(${rotation.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
         card.style.opacity = String((.58 + .42 * focus + (1 - .58 - .42 * focus) * gather).toFixed(2));
+        card.style.filter = `blur(${(6 * dissolve).toFixed(1)}px)`;
       }
     }
     function measurePortfolio() {
@@ -464,6 +468,7 @@
           card.style.transform = '';
           card.style.opacity = '';
           card.style.zIndex = '';
+          card.style.filter = '';
         }
         if (finale.classList.contains('active')) {
           finale.style.setProperty('--portfolio-top', `${$('site-header').offsetHeight}px`);
