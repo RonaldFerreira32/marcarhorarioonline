@@ -27,7 +27,7 @@
     .layout>*,.main,.panel,.summary,.booking-item>div{min-width:0}
     .panel,.summary{background:var(--paper);border:1px solid var(--line);border-radius:23px;padding:26px;box-shadow:0 10px 30px #267a6c12}
     .section-heading{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-    .step{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--mint);color:#075d5a;font-size:.9rem;font-weight:800;flex:none}
+    .layout.service-only{display:block;max-width:760px;margin-inline:auto}
     h2{font-size:1.3rem;letter-spacing:-.035em;margin:0;color:var(--pine)}
     .services{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
     .service{width:100%;text-align:left;border:1.5px solid var(--line);border-radius:18px;background:#fff;padding:18px;min-height:104px;color:var(--ink);box-shadow:0 5px 14px #1d6c5e12}
@@ -110,14 +110,14 @@
       <div class="intro" id="schedule-intro">
         <h1>Seu próximo corte começa aqui.</h1>
       </div>
-      <div class="layout" id="schedule-view">
+      <div class="layout service-only" id="schedule-view">
         <div class="main">
           <section class="panel" aria-labelledby="services-title">
-            <div class="section-heading"><span class="step">1</span><h2 id="services-title">Escolha o serviço</h2></div>
+            <div class="section-heading"><h2 id="services-title">Escolha o serviço</h2></div>
             <div class="services" id="services"></div>
           </section>
-          <section class="panel calendar-panel" aria-labelledby="calendar-title">
-            <div class="section-heading"><span class="step">2</span><h2 id="calendar-title">Escolha o dia</h2></div>
+          <section class="panel calendar-panel" id="calendar-panel" aria-labelledby="calendar-title" hidden>
+            <div class="section-heading"><h2 id="calendar-title">Escolha o dia</h2></div>
             <div class="calendar-head">
               <span class="month-title" id="month-title" aria-live="polite"></span>
               <div class="month-controls">
@@ -129,14 +129,14 @@
             <div class="days" id="days" role="group" aria-label="Dias do mês"></div>
             <p class="hint">Domingos e dias anteriores a hoje não estão disponíveis.</p>
           </section>
-          <section class="panel" aria-labelledby="slots-title">
-            <div class="section-heading"><span class="step">3</span><h2 id="slots-title">Escolha o horário</h2></div>
+          <section class="panel" id="slots-panel" aria-labelledby="slots-title" hidden>
+            <div class="section-heading"><h2 id="slots-title">Escolha o horário</h2></div>
             <div class="slots" id="slots" role="group" aria-label="Horários disponíveis"></div>
             <p class="empty-message" id="slots-message">Selecione um dia para ver os horários.</p>
             <p class="selection-error" id="selection-error" role="alert" hidden></p>
           </section>
           <section class="panel" id="booking-panel" aria-labelledby="booking-title" hidden>
-            <div class="section-heading"><span class="step">4</span><h2 id="booking-title">Seus dados</h2></div>
+            <div class="section-heading"><h2 id="booking-title">Seus dados</h2></div>
             <form id="booking-form">
               <div class="fields">
                 <label class="field">Seu nome<input id="client-name" name="client" type="text" autocomplete="name" required minlength="2" maxlength="100"></label>
@@ -151,7 +151,7 @@
             <p id="confirmation-details"></p>
           </div>
         </div>
-        <aside class="summary" aria-label="Resumo do agendamento">
+        <aside class="summary" id="schedule-summary" aria-label="Resumo do agendamento" hidden>
           <h2>Seu agendamento</h2>
           <div class="summary-row"><span class="summary-label">Serviço</span><span class="summary-value placeholder" id="summary-service">Escolha um serviço</span></div>
           <div class="summary-row"><span class="summary-label">Dia</span><span class="summary-value placeholder" id="summary-day">Escolha um dia</span></div>
@@ -286,7 +286,27 @@
     }
 
     function updateBookingPanel() {
-      $('booking-panel').hidden = selectedService === null || !selectedDay || !selectedTime;
+      const hasService = selectedService !== null;
+      const hasDay = hasService && !!selectedDay;
+      const hasTime = hasDay && !!selectedTime;
+      $('schedule-view').classList.toggle('service-only', !hasService);
+      [
+        ['calendar-panel', hasService],
+        ['slots-panel', hasDay],
+        ['booking-panel', hasTime],
+        ['schedule-summary', hasService]
+      ].forEach(([id, visible]) => {
+        const panel = $(id);
+        if (!visible) { panel.hidden = true; return; }
+        if (!panel.hidden) return;
+        panel.hidden = false;
+        if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+          panel.animate?.([
+            { opacity: 0, transform: 'translateY(12px)' },
+            { opacity: 1, transform: 'translateY(0)' }
+          ], { duration: 380, easing: 'cubic-bezier(.2,.75,.2,1)' });
+        }
+      });
     }
 
     function showSelectionError(message) { $('selection-error').textContent = message; $('selection-error').hidden = false; }
@@ -504,6 +524,7 @@
     renderCalendar();
     renderSlots();
     renderBookings();
+    updateBookingPanel();
   </script>
 </body>
 </html>
